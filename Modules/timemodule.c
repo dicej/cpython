@@ -1960,14 +1960,14 @@ time_exec(PyObject *module)
     if (HAVE_CLOCK_GETTIME_RUNTIME) {
 
 #ifdef CLOCK_REALTIME
-        if (PyModule_AddIntMacro(module, CLOCK_REALTIME) < 0) {
+        if (PyModule_AddIntMacro(module, (long) CLOCK_REALTIME) < 0) {
             return -1;
         }
 #endif
 
 #ifdef CLOCK_MONOTONIC
 
-        if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC) < 0) {
+        if (PyModule_AddIntMacro(module, (long) CLOCK_MONOTONIC) < 0) {
             return -1;
         }
 
