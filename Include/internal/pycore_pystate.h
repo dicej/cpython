@@ -309,7 +309,9 @@ static uintptr_t return_pointer_as_int(char* p) {
 
 static inline uintptr_t
 _Py_get_machine_stack_pointer(void) {
-#if _Py__has_builtin(__builtin_frame_address) || defined(__GNUC__)
+#if defined(__wasi__)
+    return UINTPTR_MAX;
+#elif _Py__has_builtin(__builtin_frame_address) || defined(__GNUC__)
     return (uintptr_t)__builtin_frame_address(0);
 #elif defined(_MSC_VER)
     return (uintptr_t)_AddressOfReturnAddress();
