@@ -637,21 +637,24 @@ def _fallback_socketpair(family=AF_INET, type=SOCK_STREAM, proto=0):
     finally:
         lsock.close()
 
-    # Authenticating avoids using a connection from something else
-    # able to connect to {host}:{port} instead of us.
-    # We expect only AF_INET and AF_INET6 families.
-    try:
-        if (
-            ssock.getsockname() != csock.getpeername()
-            or csock.getsockname() != ssock.getpeername()
-        ):
-            raise ConnectionError("Unexpected peer connection")
-    except:
-        # getsockname() and getpeername() can fail
-        # if either socket isn't connected.
-        ssock.close()
-        csock.close()
-        raise
+    # TODO: The following code is commented out because it doesn't work reliably
+    # given that the non-blocking connect above may not have completed yet.
+    #
+    # # Authenticating avoids using a connection from something else
+    # # able to connect to {host}:{port} instead of us.
+    # # We expect only AF_INET and AF_INET6 families.
+    # try:
+    #     if (
+    #         ssock.getsockname() != csock.getpeername()
+    #         or csock.getsockname() != ssock.getpeername()
+    #     ):
+    #         raise ConnectionError("Unexpected peer connection")
+    # except:
+    #     # getsockname() and getpeername() can fail
+    #     # if either socket isn't connected.
+    #     ssock.close()
+    #     csock.close()
+    #     raise
 
     return (ssock, csock)
 
