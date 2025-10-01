@@ -40,9 +40,9 @@ if ! test -x "${WASI_SDK_PATH}/bin/clang"; then
     exit 2
 fi
 
-CC="${WASI_SDK_PATH}/bin/clang"
-CPP="${WASI_SDK_PATH}/bin/clang-cpp"
-CXX="${WASI_SDK_PATH}/bin/clang++"
+CC="${WASI_SDK_PATH}/bin/clang --target=wasm32-wasip2"
+CPP="${WASI_SDK_PATH}/bin/clang-cpp --target=wasm32-wasip2"
+CXX="${WASI_SDK_PATH}/bin/clang++ --target=wasm32-wasip2"
 
 # --sysroot is required if WASI-SDK is not installed in /opt/wasi-sdk.
 if test "${WASI_SDK_PATH}" != "/opt/wasi-sdk"; then
