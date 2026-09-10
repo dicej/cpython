@@ -1174,6 +1174,8 @@ class TestPendingCalls(unittest.TestCase):
             print("(%i)"%(len(l),))
 
     @threading_helper.requires_working_threading()
+    @unittest.skipIf(support.is_wasi,
+                     "requires preemptive thread scheduling")
     def test_main_pendingcalls_threaded(self):
 
         #do every callback on a separate thread
@@ -2591,6 +2593,12 @@ class Test_PyLock(unittest.TestCase):
     locals().update((name, getattr(_testinternalcapi, name))
                     for name in dir(_testinternalcapi)
                     if name.startswith('test_lock_'))
+
+if support.is_wasi:
+    # The benchmark threads spin on the uncontended lock fast path, which
+    # starves the timer thread without preemptive scheduling.
+    Test_PyLock.test_lock_benchmark = unittest.skip(
+        "requires preemptive thread scheduling")(Test_PyLock.test_lock_benchmark)
 
 
 @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")

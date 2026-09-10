@@ -331,6 +331,8 @@ class BaseEventLoopTests(test_utils.TestCase):
             loop.call_later(60, cb)
             loop.call_at(loop.time() + 60, cb)
 
+    @unittest.skipIf(support.is_wasi,
+                     "requires preemptive thread scheduling")
     def test_check_thread(self):
         def check_in_thread(loop, event, debug, create_loop, fut):
             # wait until the event loop is running
@@ -1034,6 +1036,8 @@ class BaseEventLoopTests(test_utils.TestCase):
             test_utils.run_briefly(self.loop)
             self.assertTrue(status['finalized'])
 
+    @unittest.skipIf(support.is_wasi,
+                     "requires preemptive thread scheduling")
     def test_asyncgen_finalization_by_gc_in_other_thread(self):
         # Python issue 34769: If garbage collector runs in another
         # thread, async generators will not finalize in debug
@@ -1467,6 +1471,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     @unittest.skipIf(sys.platform.startswith('aix'),
                     "bpo-25545: IPv6 scope id and getaddrinfo() behave differently on AIX")
     @patch_socket
+    @unittest.skipIf(support.is_wasi,
+                     'scoped IPv6 literals are not supported by getaddrinfo on WASI')
     def test_create_connection_ipv6_scope(self, m_socket):
         m_socket.getaddrinfo = socket.getaddrinfo
         sock = m_socket.socket.return_value
@@ -1768,6 +1774,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
 
+    @unittest.skipIf(support.is_wasi,
+                     "WASI has no SO_BROADCAST / socket-option support")
     def test_create_datagram_endpoint_allow_broadcast(self):
         protocol = MyDatagramProto(create_future=True, loop=self.loop)
         self.loop.sock_connect = sock_connect = mock.Mock()
@@ -1909,6 +1917,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     @unittest.skipIf(sys.platform == 'vxworks',
                     "SO_BROADCAST is enabled by default on VxWorks")
+    @unittest.skipIf(support.is_wasi,
+                     "WASI has no SO_BROADCAST / socket-option support")
     def test_create_datagram_endpoint_sockopts(self):
         # Socket options should not be applied unless asked for.
         # SO_REUSEPORT is not available on all platforms.

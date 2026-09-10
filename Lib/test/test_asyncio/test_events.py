@@ -23,7 +23,7 @@ import errno
 import unittest
 from unittest import mock
 import weakref
-if sys.platform not in ('win32', 'vxworks'):
+if sys.platform not in ('win32', 'vxworks', 'wasi'):
     import tty
 
 import asyncio
@@ -514,6 +514,11 @@ class EventLoopTestsMixin:
     def test_reader_callback(self):
         r, w = socket.socketpair()
         r.setblocking(False)
+        # WASI's I/O behavior seems to not always deliver EOF to this test which
+        # loops in a particular manner. Work around the "socket not closed"
+        # warning which causes the test to fail.
+        self.addCleanup(r.close)
+
         bytes_read = bytearray()
 
         def reader():
@@ -560,6 +565,8 @@ class EventLoopTestsMixin:
         self.assertEqual(read, data)
 
     @unittest.skipUnless(hasattr(signal, 'SIGKILL'), 'No SIGKILL')
+    @unittest.skipUnless(hasattr(signal, 'valid_signals'),
+                         'requires signal.valid_signals()')
     def test_add_signal_handler(self):
         caught = 0
 
@@ -1462,10 +1469,12 @@ class EventLoopTestsMixin:
         self.assertEqual('CLOSED', client.state)
         server.transport.close()
 
+    @unittest.skipIf(support.is_wasi, 'getnameinfo is not supported on WASI')
     def test_create_datagram_endpoint(self):
         self._test_create_datagram_endpoint(('127.0.0.1', 0), socket.AF_INET)
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 not supported or enabled')
+    @unittest.skipIf(support.is_wasi, 'getnameinfo is not supported on WASI')
     def test_create_datagram_endpoint_ipv6(self):
         self._test_create_datagram_endpoint(('::1', 0), socket.AF_INET6)
 
@@ -1957,6 +1966,8 @@ class EventLoopTestsMixin:
         with self.assertRaises(RuntimeError):
             self.loop.run_until_complete(coro)
 
+    @unittest.skipUnless(hasattr(signal, 'valid_signals'),
+                         'requires signal.valid_signals()')
     def test_close(self):
         self.loop.close()
 

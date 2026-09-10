@@ -19,6 +19,7 @@ from asyncio.selector_events import (BaseSelectorEventLoop,
                                      _SelectorSocketTransport,
                                      _SelectorTransport)
 from test.test_asyncio import utils as test_utils
+from test import support
 
 MOCK_ANY = mock.ANY
 
@@ -159,6 +160,8 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._csock.send.side_effect = RuntimeError()
         self.assertRaises(RuntimeError, self.loop._write_to_self)
 
+    @unittest.skipIf(support.is_wasi,
+                     "requires preemptive thread scheduling")
     @mock.patch('socket.getaddrinfo')
     def test_sock_connect_resolve_using_socket_params(self, m_gai):
         addr = ('need-resolution.com', 8080)

@@ -117,6 +117,7 @@ class TimeTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     @unittest.skipIf(support.is_emscripten, "Fails to find clock")
+    @unittest.skipIf(support.is_wasi, "WASI has no per-thread CPU clocks")
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)

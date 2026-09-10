@@ -105,8 +105,8 @@ class DummyFTPHandler(asynchat.async_chat):
 
     def __init__(self, conn, encoding=DEFAULT_ENCODING):
         asynchat.async_chat.__init__(self, conn)
-        # tells the socket to handle urgent data inline (ABOR command)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
+        if hasattr(socket, 'SO_OOBINLINE'):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
         self.set_terminator(b"\r\n")
         self.in_buffer = []
         self.dtp = None
@@ -590,6 +590,8 @@ class TestFTPClass(TestCase):
         # Ensure the connection gets closed; sock attribute should be None
         self.assertEqual(self.client.sock, None)
 
+    @unittest.skipUnless(hasattr(socket, 'SO_OOBINLINE'),
+                         'platform lacks out-of-band data support')
     def test_abort(self):
         self.client.abort()
 

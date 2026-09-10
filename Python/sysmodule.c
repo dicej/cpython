@@ -3775,6 +3775,85 @@ make_emscripten_info(void)
 
 #endif // __EMSCRIPTEN__
 
+#ifdef __wasi__
+
+#include <wasi/version.h>
+
+PyDoc_STRVAR(wasi_info__doc__,
+"sys._wasi_info\n\
+\n\
+WebAssembly WASI platform information.");
+
+static PyTypeObject *WasiInfoType;
+
+static PyStructSequence_Field wasi_info_fields[] = {
+    {"wasi_sdk_major", "WASI SDK major version, or None outside of a SDK build"},
+    {"wasi_sdk_version", "WASI SDK full version, or None outside of a SDK build"},
+    {"cooperative_threads", "cooperative thread support"},
+    {"wasi_version", "WASI target version (\"wasip1\", \"wasip2\", ...)"},
+    {0}
+};
+
+static PyStructSequence_Desc wasi_info_desc = {
+    "sys._wasi_info",     /* name */
+    wasi_info__doc__ ,    /* doc */
+    wasi_info_fields,     /* fields */
+    4
+};
+
+#define SetItem(obj) set_wasi_info_item(wasi_info, &pos, (obj))
+
+static PyObject *
+make_wasi_info(void)
+{
+    int pos = 0;
+
+    PyObject *wasi_info = PyStructSequence_New(WasiInfoType);
+    if (wasi_info == NULL) {
+        return NULL;
+    }
+
+    /* The __wasi_sdk_*__ macros are only defined when wasi-libc was built as
+     * part of a wasi-sdk release. */
+#ifdef __wasi_sdk_major__
+    PyStructSequence_SET_ITEM(wasi_info, pos++, PyLong_FromLong(__wasi_sdk_major__));
+#else
+    PyStructSequence_SET_ITEM(wasi_info, pos++, Py_NewRef(Py_None));
+#endif
+
+#ifdef __wasi_sdk_version__
+    PyStructSequence_SET_ITEM(wasi_info, pos++, PyUnicode_FromString(__wasi_sdk_version__));
+#else
+    PyStructSequence_SET_ITEM(wasi_info, pos++, Py_NewRef(Py_None));
+#endif
+
+#ifdef __wasi_cooperative_threads__
+    PyStructSequence_SET_ITEM(wasi_info, pos++, PyBool_FromLong(1));
+#else
+    PyStructSequence_SET_ITEM(wasi_info, pos++, PyBool_FromLong(0));
+#endif
+
+#if defined(__wasip1__)
+    PyStructSequence_SET_ITEM(wasi_info, pos++, PyUnicode_FromString("wasip1"));
+#elif defined(__wasip2__)
+    PyStructSequence_SET_ITEM(wasi_info, pos++, PyUnicode_FromString("wasip2"));
+#elif defined(__wasip3__)
+    PyStructSequence_SET_ITEM(wasi_info, pos++, PyUnicode_FromString("wasip3"));
+#else
+    PyStructSequence_SET_ITEM(wasi_info, pos++, Py_NewRef(Py_None));
+#endif
+
+    if (PyErr_Occurred()) {
+        Py_CLEAR(wasi_info);
+        return NULL;
+    }
+    return wasi_info;
+}
+
+#undef SetItem
+
+#endif // __wasi__
+
 static struct PyModuleDef sysmodule = {
     PyModuleDef_HEAD_INIT,
     "sys",
@@ -3911,6 +3990,16 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
         }
     }
     SET_SYS("_emscripten_info", make_emscripten_info());
+#endif
+
+#ifdef __wasi__
+    if (WasiInfoType == NULL) {
+        WasiInfoType = PyStructSequence_NewType(&wasi_info_desc);
+        if (WasiInfoType == NULL) {
+            goto type_init_failed;
+        }
+    }
+    SET_SYS("_wasi_info", make_wasi_info());
 #endif
 
     /* adding sys.path_hooks and sys.path_importer_cache */
@@ -4205,6 +4294,11 @@ _PySys_FiniTypes(PyInterpreterState *interp)
 #ifdef __EMSCRIPTEN__
     if (_Py_IsMainInterpreter(interp)) {
         Py_CLEAR(EmscriptenInfoType);
+    }
+#endif
+#ifdef __wasi__
+    if (_Py_IsMainInterpreter(interp)) {
+        Py_CLEAR(WasiInfoType);
     }
 #endif
 }

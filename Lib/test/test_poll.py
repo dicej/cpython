@@ -8,7 +8,8 @@ import threading
 import time
 import unittest
 from test.support import (
-    cpython_only, requires_subprocess, requires_working_socket, requires_resource
+    cpython_only, requires_subprocess, requires_working_socket, requires_resource,
+    is_wasi
 )
 from test.support import threading_helper
 from test.support.os_helper import TESTFN
@@ -185,6 +186,9 @@ class PollTests(unittest.TestCase):
         self.assertRaises(OverflowError, pollster.poll, INT_MAX + 1)
         self.assertRaises(OverflowError, pollster.poll, UINT_MAX + 1)
 
+    @unittest.skipIf(is_wasi,
+                     "WASI allows only one concurrent poll registration per "
+                     "open file description")
     @threading_helper.reap_threads
     def test_threaded_poll(self):
         r, w = os.pipe()

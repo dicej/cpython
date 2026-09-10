@@ -1,5 +1,9 @@
 import unittest
 
+from test.support import import_helper
+# asyncio.tools requires _remote_debugging, which is not built on every
+# platform, so raise a SkipTest when it is missing.
+import_helper.import_module('_remote_debugging')
 from asyncio import tools
 
 from collections import namedtuple

@@ -230,7 +230,7 @@ def _can_start_thread() -> bool:
     if sys.platform == "emscripten":
         return sys._emscripten_info.pthreads
     elif sys.platform == "wasi":
-        return False
+        return sys._wasi_info.cooperative_threads
     else:
         # assume all other platforms have working thread support.
         return True

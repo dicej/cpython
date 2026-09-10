@@ -77,6 +77,7 @@ class ThreadSignals(unittest.TestCase):
     # Issue #20564: sem_timedwait() cannot be interrupted on OpenBSD
     @unittest.skipIf(sys.platform.startswith('openbsd'),
                      'lock cannot be interrupted on OpenBSD')
+    @unittest.skipUnless(hasattr(signal, 'alarm'), 'requires signal.alarm()')
     def test_lock_acquire_interruption(self):
         # Mimic receiving a SIGINT (KeyboardInterrupt) with SIGALRM while stuck
         # in a deadlock.
@@ -108,6 +109,7 @@ class ThreadSignals(unittest.TestCase):
     # Issue #20564: sem_timedwait() cannot be interrupted on OpenBSD
     @unittest.skipIf(sys.platform.startswith('openbsd'),
                      'lock cannot be interrupted on OpenBSD')
+    @unittest.skipUnless(hasattr(signal, 'alarm'), 'requires signal.alarm()')
     def test_rlock_acquire_interruption(self):
         # Mimic receiving a SIGINT (KeyboardInterrupt) with SIGALRM while stuck
         # in a deadlock.
@@ -169,12 +171,15 @@ class ThreadSignals(unittest.TestCase):
         finally:
             signal.signal(signal.SIGUSR1, old_handler)
 
+    @unittest.skipUnless(hasattr(os, 'kill'), 'requires os.kill()')
     def test_lock_acquire_retries_on_intr(self):
         self.acquire_retries_on_intr(thread.allocate_lock())
 
+    @unittest.skipUnless(hasattr(os, 'kill'), 'requires os.kill()')
     def test_rlock_acquire_retries_on_intr(self):
         self.acquire_retries_on_intr(thread.RLock())
 
+    @unittest.skipUnless(hasattr(os, 'kill'), 'requires os.kill()')
     def test_interrupted_timed_acquire(self):
         # Test to make sure we recompute lock acquisition timeouts when we
         # receive a signal.  Check this by repeatedly interrupting a lock

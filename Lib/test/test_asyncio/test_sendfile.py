@@ -196,9 +196,34 @@ class SockSendfileMixin(SendfileBase):
 
         return sock, proto
 
+    def drain_before_close(self, sock):
+        # On WASI the `close` function can block, and discussion of this is
+        # located upstream at WebAssembly/component-model#617. The
+        # single-threaded nature of this test means that a blocking `close` is
+        # bad, so to work around this wait for sockets to be writable to ensure
+        # that `close` doesn't block.
+        if sys.platform != "wasi":
+            return
+
+        async def wait_writable():
+            fut = self.loop.create_future()
+
+            def on_writable():
+                if not fut.done():
+                    fut.set_result(None)
+
+            self.loop.add_writer(sock.fileno(), on_writable)
+            try:
+                await fut
+            finally:
+                self.loop.remove_writer(sock.fileno())
+
+        self.run_loop(wait_writable())
+
     def test_sock_sendfile_success(self):
         sock, proto = self.prepare_socksendfile()
         ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        self.drain_before_close(sock)
         sock.close()
         self.run_loop(proto.wait_closed())
 
@@ -210,6 +235,7 @@ class SockSendfileMixin(SendfileBase):
         sock, proto = self.prepare_socksendfile()
         ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
                                                     1000, 2000))
+        self.drain_before_close(sock)
         sock.close()
         self.run_loop(proto.wait_closed())
 
@@ -222,6 +248,7 @@ class SockSendfileMixin(SendfileBase):
         with tempfile.TemporaryFile() as f:
             ret = self.run_loop(self.loop.sock_sendfile(sock, f,
                                                         0, None))
+        self.drain_before_close(sock)
         sock.close()
         self.run_loop(proto.wait_closed())
 
@@ -234,6 +261,7 @@ class SockSendfileMixin(SendfileBase):
         self.run_loop(self.loop.sock_sendall(sock, buf))
         ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
         self.run_loop(self.loop.sock_sendall(sock, buf))
+        self.drain_before_close(sock)
         sock.close()
         self.run_loop(proto.wait_closed())
 

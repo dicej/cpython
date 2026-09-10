@@ -1350,6 +1350,8 @@ class StressTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
     @threading_helper.requires_working_threading()
+    @unittest.skipIf(support.is_wasi,
+                     "requires preemptive thread scheduling")
     def test_stress_modifying_handlers(self):
         # bpo-43406: race condition between trip_signal() and signal.signal
         signum = signal.SIGUSR1

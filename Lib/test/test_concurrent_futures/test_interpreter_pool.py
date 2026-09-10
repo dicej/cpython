@@ -8,6 +8,9 @@ import sys
 import textwrap
 import time
 import unittest
+from test.support import import_helper
+# Raise SkipTest on builds without subinterpreter support.
+import_helper.import_module('_interpreters')
 from concurrent.futures.interpreter import BrokenInterpreterPool
 from concurrent import interpreters
 from concurrent.interpreters import _queues as queues

@@ -8,7 +8,8 @@ import struct
 import sys
 import unittest
 from test.support import (
-    cpython_only, get_pagesize, is_apple, requires_subprocess, verbose, is_emscripten
+    cpython_only, get_pagesize, is_apple, requires_subprocess, verbose, is_emscripten,
+    is_wasi
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink, make_bad_fd
@@ -82,6 +83,8 @@ class TestFcntl(unittest.TestCase):
                 print('struct.pack: ', repr(lockdata))
         return lockdata
 
+    @unittest.skipIf(is_wasi, 'WASI defines the locking constants but '
+                              'fcntl(F_SETLKW) returns ENOTSUP')
     def test_fcntl_fileno(self):
         # the example from the library docs
         self.f = open(TESTFN, 'wb')
@@ -94,6 +97,8 @@ class TestFcntl(unittest.TestCase):
             print('String from fcntl with F_SETLKW: ', repr(rv))
         self.f.close()
 
+    @unittest.skipIf(is_wasi, 'WASI defines the locking constants but '
+                              'fcntl(F_SETLKW) returns ENOTSUP')
     def test_fcntl_file_descriptor(self):
         # again, but pass the file rather than numeric descriptor
         self.f = open(TESTFN, 'wb')
@@ -155,6 +160,8 @@ class TestFcntl(unittest.TestCase):
         finally:
             os.close(fd)
 
+    @unittest.skipIf(is_wasi, 'WASI defines the locking constants but '
+                              'flock() returns ENOTSUP')
     def test_flock(self):
         # Solaris needs readable file for shared lock
         self.f = open(TESTFN, 'wb+')

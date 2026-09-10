@@ -502,7 +502,11 @@ extern "C" {
 /* Some WebAssembly platforms do not provide a working pthread implementation.
  * Thread support is stubbed and any attempt to create a new thread fails.
  */
+#ifdef __wasi__
+#  include <wasi/version.h>
+#endif
 #if (!defined(HAVE_PTHREAD_STUBS) && \
+      (!defined(__wasi__) || defined(__wasi_cooperative_threads__)) && \
       (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
 #  define Py_CAN_START_THREADS 1
 #endif

@@ -6,6 +6,7 @@ import threading
 import time
 import unittest
 import weakref
+from test import support
 from test.support import gc_collect, bigmemtest
 from test.support import import_helper
 from test.support import threading_helper
@@ -414,9 +415,13 @@ class BaseQueueTestMixin(BlockingTestMixin):
             self.assertListEqual(res_shutdown, [True])
             self.assertTrue(q.empty())
 
+    @unittest.skipIf(support.is_wasi,
+                     "requires preemptive thread scheduling")
     def test_shutdown_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(False)
 
+    @unittest.skipIf(support.is_wasi,
+                     "requires preemptive thread scheduling")
     def test_shutdown_immediate_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(True)
 

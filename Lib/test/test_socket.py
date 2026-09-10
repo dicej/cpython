@@ -1022,9 +1022,10 @@ class GeneralModuleTests(unittest.TestCase):
             socket.AF_INET6
         socket.SOCK_STREAM
         socket.SOCK_DGRAM
-        socket.SOCK_RAW
-        socket.SOCK_RDM
-        socket.SOCK_SEQPACKET
+        if not support.is_wasi:
+            socket.SOCK_RAW
+            socket.SOCK_RDM
+            socket.SOCK_SEQPACKET
         socket.SOL_SOCKET
         socket.SO_REUSEADDR
 
@@ -1112,8 +1113,9 @@ class GeneralModuleTests(unittest.TestCase):
 
         # we don't test socket_helper.HOSTv6 because there's a chance it doesn't have
         # a matching name entry (e.g. 'ip6-localhost')
-        for host in [socket_helper.HOSTv4]:
-            self.assertIn(host, socket.gethostbyaddr(host)[2])
+        if not support.is_wasi:
+            for host in [socket_helper.HOSTv4]:
+                self.assertIn(host, socket.gethostbyaddr(host)[2])
 
     def test_host_resolution_bad_address(self):
         # These are all malformed IP addresses and expected not to resolve to
@@ -1763,7 +1765,8 @@ class GeneralModuleTests(unittest.TestCase):
         # these should all be successful
         domain = 'испытание.pythontest.net'
         socket.gethostbyname(domain)
-        socket.gethostbyname_ex(domain)
+        if not support.is_wasi:
+            socket.gethostbyname_ex(domain)
         socket.getaddrinfo(domain,0,socket.AF_UNSPEC,socket.SOCK_STREAM)
         # this may not work if the forward lookup chooses the IPv6 address, as that doesn't
         # have a reverse entry yet
@@ -5893,7 +5896,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         self.cli = socket.create_connection((HOST, self.port),
                             timeout=support.LOOPBACK_TIMEOUT)
         self.addCleanup(self.cli.close)
-        self.assertEqual(self.cli.family, 2)
+        self.assertEqual(self.cli.family, socket.AF_INET)
 
     testSourceAddress = _justAccept
     def _testSourceAddress(self):
@@ -6471,6 +6474,8 @@ class InheritanceTest(unittest.TestCase):
             with newsock:
                 self.assertEqual(newsock.get_inheritable(), False)
 
+    @unittest.skipIf(support.is_wasi,
+                     "WASI has no exec; descriptors are never inheritable")
     def test_set_inheritable(self):
         sock = socket.socket()
         with sock:
@@ -6481,6 +6486,8 @@ class InheritanceTest(unittest.TestCase):
             self.assertEqual(sock.get_inheritable(), False)
 
     @unittest.skipIf(fcntl is None, "need fcntl")
+    @unittest.skipIf(support.is_wasi,
+                     "WASI has no exec; descriptors are never inheritable")
     def test_get_inheritable_cloexec(self):
         sock = socket.socket()
         with sock:
@@ -6495,6 +6502,8 @@ class InheritanceTest(unittest.TestCase):
             self.assertEqual(sock.get_inheritable(), True)
 
     @unittest.skipIf(fcntl is None, "need fcntl")
+    @unittest.skipIf(support.is_wasi,
+                     "WASI has no exec; descriptors are never inheritable")
     def test_set_inheritable_cloexec(self):
         sock = socket.socket()
         with sock:
@@ -7167,6 +7176,8 @@ class TestMacOSTCPFlags(unittest.TestCase):
         self.assertTrue(socket.TCP_KEEPALIVE)
 
 @unittest.skipUnless(hasattr(socket, 'TCP_QUICKACK'), 'need socket.TCP_QUICKACK')
+@unittest.skipIf(support.is_wasi,
+                 "WASI defines TCP_QUICKACK but the host does not support it")
 class TestQuickackFlag(unittest.TestCase):
     def check_set_quickack(self, sock):
         # quickack already true by default on some OS distributions

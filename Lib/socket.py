@@ -461,7 +461,7 @@ class socket(_socket.socket):
     def _check_sendfile_params(self, file, offset, count):
         if 'b' not in getattr(file, 'mode', 'b'):
             raise ValueError("file should be opened in binary mode")
-        if not self.type & SOCK_STREAM:
+        if self.type != SOCK_STREAM:
             raise ValueError("only SOCK_STREAM type sockets are supported")
         if count is not None:
             if not isinstance(count, int):
@@ -641,6 +641,12 @@ def _fallback_socketpair(family=AF_INET, type=SOCK_STREAM, proto=0):
     # able to connect to {host}:{port} instead of us.
     # We expect only AF_INET and AF_INET6 families.
     try:
+        if sys.platform == "wasi":
+            # On WASI the non-blocking connect() above only completes while the
+            # guest is blocked on the socket, so wait for the client socket to
+            # become writable before asking either socket for its peer.
+            import select
+            select.select([], [csock], [])
         if (
             ssock.getsockname() != csock.getpeername()
             or csock.getsockname() != ssock.getpeername()

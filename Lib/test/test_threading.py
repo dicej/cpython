@@ -2388,6 +2388,8 @@ class InterruptMainTests(unittest.TestCase):
         self.assertRaises(ValueError, _thread.interrupt_main, 1000000)
 
     @threading_helper.reap_threads
+    @unittest.skipIf(support.is_wasi,
+                     "requires preemptive thread scheduling")
     def test_can_interrupt_tight_loops(self):
         cont = [True]
         started = [False]

@@ -4804,10 +4804,6 @@ dnl the check does not work on cross compilation case...
   ipv6=no
 ])
 
-AS_CASE([$ac_sys_system],
-  [WASI], [ipv6=no]
-)
-
 AC_MSG_RESULT([$ipv6])
 
 if test "$ipv6" = "yes"; then
@@ -7706,6 +7702,7 @@ case "$ac_sys_system" in
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
   OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
+  WASI*) _PYTHREAD_NAME_MAXLEN=15;;
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then
@@ -7813,7 +7810,6 @@ AS_CASE([$ac_sys_system],
       [_testimportmultiple],
       [_testmultiphase],
       [_testsinglephase],
-      [fcntl],
       [mmap],
       [termios],
       [xxlimited],

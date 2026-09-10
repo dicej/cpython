@@ -628,7 +628,7 @@ def requires_subprocess():
 # Emscripten's socket emulation and WASI sockets have limitations.
 has_socket_support = not (
     is_emscripten
-    or is_wasi
+    or (is_wasi and not sys._wasi_info.cooperative_threads)
 )
 
 def requires_working_socket(*, module=False):
